@@ -12,7 +12,7 @@ int main() {
     std::getline(std::cin, input2);
     */
 
-    approx_searching("test_dataset/query.format","test_dataset/data.txt",5u);
+    approx_searching("test_dataset/query.txt","test_dataset/data.txt",5u);
 
     return 0;
 }
