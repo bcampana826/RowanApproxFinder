@@ -11,8 +11,6 @@
 
 using namespace std;
 
-/**
-
 typedef struct G_pointers {
     unsigned int* outgoing_neighbors;
     unsigned int* outgoing_neighbors_offset;
@@ -22,5 +20,3 @@ typedef struct G_pointers {
     unsigned int* incoming_neighbors_offset;
     unsigned int V;
 } G_pointers; //graph related
-
-*/
