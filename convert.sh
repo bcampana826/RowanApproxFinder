@@ -6,7 +6,7 @@ if [[ $# -ne 3 ]]; then
 	exit -1
 fi
 
-printf "t 1 " > $3
+echo -n "t 1 " > $3
 
 wc -l < $1 >> $3
 
