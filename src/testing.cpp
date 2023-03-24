@@ -23,5 +23,8 @@ int main() {
 
     cout<<"Loaded"<<endl;
 
+    query_graph.printGraph();
+    data_graph.printGraph();
+
     return 0;
 }
