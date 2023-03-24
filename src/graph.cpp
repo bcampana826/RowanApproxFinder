@@ -92,23 +92,17 @@ Graph::Graph(bool mode, string input_file){
 
         if(i < largest_att+1){
 
-            std::cout << i << "before" << std::endl;
-
             s = attribute_set[i];
             
             for(std::set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
-                
                 attributes_in_order[l] = *p;
-                std::cout << attributes_in_order[l] << std::endl;
                 l++;
             }
 
         }
 
     }
-
-    std::cout << "done..." << std::endl;
-
+    std::cout << "Done..." << std::endl;
 }
 
 
@@ -116,7 +110,6 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
 
     std::cout << "Reading Graph..."<< std::endl;
 
-    double load_start = omp_get_wtime();
     ifstream infile;
     infile.open(input_file);
     if(!infile){
@@ -198,12 +191,10 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
     }
 
     infile.close();
-    double load_end = omp_get_wtime();
 
     std::cout << "Reading Graph Complete..."<< std::endl;
 
 }
-
 
 
 void Graph::printGraph() {
@@ -293,7 +284,7 @@ void Graph::printGraph() {
         for (unsigned int i = 0; i < Signature_Properties*V; i++) {
             std::cout << signatures[i] << " ";
         }
-        std::cout << std::endl;
+        std::cout << "Graph Printed." << std::endl;
 
 
 }

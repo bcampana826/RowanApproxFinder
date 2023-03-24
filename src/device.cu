@@ -18,3 +18,10 @@ __device__ float get_node_viability_score(unsigned int node, unsigned int *atts,
         return 0;
     }
 }
+
+/**
+ * This method is going to set the root node and the matching order for our programs use later
+*/
+__device__ float root_and_matching_order(){
+
+}

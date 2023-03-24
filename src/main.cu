@@ -1,25 +1,38 @@
 #include "../inc/main.h"
 
+
 unsigned long long int approx_searching(string query_file,string data_file,unsigned int k_top){
 
 
     // Read in the Query File and the Data File
     cout<<"start loading graph file from disk to memory..."<<endl;
     Graph query_graph(true,query_file);
+
+    cout<<"Query Loaded!"<<endl;
+
     Graph data_graph(false,data_file);
+
+    G_pointers query_pointers;
+    G_pointers data_pointers;
 
 
     // Save them both over to the GLOBAL memory
     cout<<"start copying graph to gpu..."<<endl;
-    //malloc_graph_to_gpu_memory(query_graph,query_pointers);
-    //malloc_graph_to_gpu_memory(data_graph,data_pointers);
+    //malloc_graph_to_gpu_memory(query_graph,query_pointers,true);
+    //malloc_graph_to_gpu_memory(data_graph,data_pointers,false);
     cout<<"end copying graph to gpu..."<<endl;
 
-    // Find Root and Matching Order
     cout<<"Query..."<<endl;
     query_graph.printGraph();
     cout<<"Data..."<<endl;
     data_graph.printGraph();
+
+
+
+    // Find Root and Matching Order
+
+
+
 
     return 0;
     /**

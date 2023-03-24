@@ -2,7 +2,7 @@
 # $1 is labels, $2 is edges, $3 is out file
 
 if [[ $# -ne 3 ]]; then
-	echo "faulty input. valid: edge_list, labels, out_file"
+	echo "faulty input. valid: labels, edgelist, out_file"
 	exit -1
 fi
 
