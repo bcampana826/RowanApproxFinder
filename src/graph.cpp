@@ -34,12 +34,13 @@ Graph::Graph(bool mode, string input_file){
     }
 
     // pre load the attributes
-    attributes_in_order_offset = new unsigned int[largest_att+2];
+    // largest att always needs to be +1 because atts aren't gaurenteed to be 0 based
+    attributes_in_order_offset = new unsigned int[(largest_att+1)+1];
 
     std::cout << "Before save..." << std::endl;
 
     #pragma omp parallel for
-    for(unsigned int i=0;i<largest_att+2;++i){
+    for(unsigned int i=0;i<(largest_att+1)+1;++i){
         attributes_in_order_offset[i] = 0;
     }
 
@@ -55,7 +56,7 @@ Graph::Graph(bool mode, string input_file){
             incoming_neighbors_offset[i] += incoming_neighbors_offset[i-1] + incoming_neighbors_set[i-1].size();
             outgoing_neighbors_offset[i] += outgoing_neighbors_offset[i-1] + outgoing_neighbors_set[i-1].size();
         }
-        if(i < largest_att+2){
+        if(i < (largest_att+1)+1){
             // this is +2. this is because attributes might not be 0 based
             attributes_in_order_offset[i] += attributes_in_order_offset[i-1] + attribute_set[i-1].size();
         }
@@ -66,7 +67,7 @@ Graph::Graph(bool mode, string input_file){
 
     outgoing_neighbors = new unsigned int[outgoing_neighbors_offset[V]];
     incoming_neighbors = new unsigned int[incoming_neighbors_offset[V]];
-    attributes_in_order = new unsigned int[attributes_in_order_offset[largest_att]];
+    attributes_in_order = new unsigned int[attributes_in_order_offset[largest_att+1]];
 
 
      std::cout << largest_att << std::endl;
@@ -74,41 +75,38 @@ Graph::Graph(bool mode, string input_file){
     unsigned int j = 0;
     unsigned int k = 0;
     unsigned int l = 0;
-    for(unsigned int i=0;i<bound+1;++i){
+
+    for(unsigned int i=0; i<V; ++i){
         set<unsigned int> s;
-
-        if(i < V){
-            s = outgoing_neighbors_set[i];
-            for(std::set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
-                outgoing_neighbors[j] = *p;
-                j++;
-            }
-            s = incoming_neighbors_set[i];
-            for(std::set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
-                incoming_neighbors[k] = *p;
-                k++;
-            }
+        s = outgoing_neighbors_set[i];
+        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
+            outgoing_neighbors[j] = *p;
+            j++;
         }
-
-        if(i < largest_att+1){
-
-            std::cout << i << "before" << std::endl;
-
-            s = attribute_set[i];
-            
-            for(std::set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
-                
-                attributes_in_order[l] = *p;
-                std::cout << attributes_in_order[l] << std::endl;
-                l++;
-            }
-
+        s = incoming_neighbors_set[i];
+        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
+            incoming_neighbors[k] = *p;
+            k++;
         }
 
     }
 
-    std::cout << "done..." << std::endl;
+    for(unsigned int i=0;i<largest_att+1;++i){
+        
+        set<unsigned int> s;
+        std::cout << "looping atts " << i << std::endl;
+        s = attribute_set[i];
+        std::cout << s.size() << std::endl;
+        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
+            
+            attributes_in_order[l] = *p;
+            std::cout << l << std::endl;
+            l++;
+        }
 
+
+    }
+    std::cout << "Done..." << std::endl;
 }
 
 
@@ -116,7 +114,6 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
 
     std::cout << "Reading Graph..."<< std::endl;
 
-    double load_start = omp_get_wtime();
     ifstream infile;
     infile.open(input_file);
     if(!infile){
@@ -149,7 +146,7 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
     unsigned int counter = 0;
     E = 0;
 
-    set<unsigned int> unique_attributes;
+   // set<unsigned int> unique_attributes;
     largest_att = 0;
 
     while (getline(infile, line)) {
@@ -158,7 +155,7 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
             split(line, split_list, ' ');
 
             attributes[counter] = stoi(split_list[2]);
-            unique_attributes.insert(stoi(split_list[2]));
+       //     unique_attributes.insert(stoi(split_list[2]));
             counter++;
 
             if (stoi(split_list[2]) > largest_att){
@@ -194,16 +191,18 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
     std::cout << "after first atts..."<< std::endl;
 
     for(int i = 0; i < V; i++){
+
+        // grab V's attribute
+        // insert V into attribute_set[at att]
+
         attribute_set[attributes[i]].insert(i);
     }
 
     infile.close();
-    double load_end = omp_get_wtime();
 
     std::cout << "Reading Graph Complete..."<< std::endl;
 
 }
-
 
 
 void Graph::printGraph() {
@@ -293,7 +292,7 @@ void Graph::printGraph() {
         for (unsigned int i = 0; i < Signature_Properties*V; i++) {
             std::cout << signatures[i] << " ";
         }
-        std::cout << std::endl;
+        std::cout << "Graph Printed." << std::endl;
 
 
 }

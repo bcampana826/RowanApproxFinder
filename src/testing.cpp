@@ -2,7 +2,7 @@
 #include "../inc/main.h"
 
 int main() {
-    /**
+    
 
     std::string input;
     std::string input2;
@@ -10,9 +10,21 @@ int main() {
     std::getline(std::cin, input);
     std::cout << "Please enter a Data graph file: ";
     std::getline(std::cin, input2);
-    */
+    
 
-    approx_searching("test_dataset/query.txt","test_dataset/data.txt",5u);
+    //approx_searching(input,input2,5u);
+
+    cout<<"start loading graph file from disk to memory..."<<endl;
+    Graph query_graph(true,input);
+
+    cout<<"Query Loaded!"<<endl;
+
+    Graph data_graph(false,input2);
+
+    cout<<"Loaded"<<endl;
+
+    query_graph.printGraph();
+    data_graph.printGraph();
 
     return 0;
 }
