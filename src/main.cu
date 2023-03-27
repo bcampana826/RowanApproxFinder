@@ -1,6 +1,7 @@
 #include "../inc/main.h"
 
 
+
 unsigned long long int approx_searching(string query_file,string data_file,unsigned int k_top){
 
 
@@ -12,24 +13,45 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
 
     Graph data_graph(false,data_file);
 
+    query_graph.create_matching_order(data_graph);
+
     G_pointers query_pointers;
     G_pointers data_pointers;
+
+    E_pointers extra_pointers;
 
 
     // Save them both over to the GLOBAL memory
     cout<<"start copying graph to gpu..."<<endl;
-    //malloc_graph_to_gpu_memory(query_graph,query_pointers,true);
-    //malloc_graph_to_gpu_memory(data_graph,data_pointers,false);
+    malloc_graph_to_gpu_memory(query_graph,query_pointers,true);
+    malloc_graph_to_gpu_memory(data_graph,data_pointers,false);
+
+    malloc_extra_to_gpu_memory(extra_pointers,query_graph.V,query_graph.matching_order);
     cout<<"end copying graph to gpu..."<<endl;
 
-    cout<<"Query..."<<endl;
-    query_graph.printGraph();
-    cout<<"Data..."<<endl;
-    data_graph.printGraph();
 
 
+    //generate_matching_order<<<1,1>>>(query_pointers,extra_pointers.matching_order,data_pointers.attributes_in_order_offset);
+
+    std::cout << "matching = ";
+    for (unsigned int i = 0; i < query_graph.V; i++) {
+        std::cout << query_graph.matching_order[i] << " ";
+    }
+    
+
+
+
+    /**
+     * cout<<"Query..."<<endl;
+     * query_graph.printGraph();
+     *  cout<<"Data..."<<endl;
+     *  data_graph.printGraph();
+    */
 
     // Find Root and Matching Order
+    cout<<"Testing Node Viability Score"<<endl;
+    //testing<<<1,1>>>(query_pointers,data_pointers,extra_pointers);
+
 
 
 

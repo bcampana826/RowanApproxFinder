@@ -1,5 +1,7 @@
 #include "../inc/util.h"
 
+
+
 unsigned long long split(const string &txt, vector<string> &strs, char ch) {
 	//this is the general case
 	size_t pos = txt.find(ch);

@@ -37,7 +37,7 @@ Graph::Graph(bool mode, string input_file){
     // largest att always needs to be +1 because atts aren't gaurenteed to be 0 based
     attributes_in_order_offset = new unsigned int[(largest_att+1)+1];
 
-    std::cout << "Before save..." << std::endl;
+    //std::cout << "Before save..." << std::endl;
 
     #pragma omp parallel for
     for(unsigned int i=0;i<(largest_att+1)+1;++i){
@@ -48,7 +48,7 @@ Graph::Graph(bool mode, string input_file){
 
     unsigned int bound = (V > largest_att) ? V : largest_att;
     
-    std::cout << "Before fill..." << std::endl;
+    //std::cout << "Before fill..." << std::endl;
 
     for(unsigned int i=1;i<bound+2;++i){
 
@@ -63,14 +63,14 @@ Graph::Graph(bool mode, string input_file){
     }
 
 
-    std::cout << "Before iterate..." << std::endl;
+    //std::cout << "Before iterate..." << std::endl;
 
     outgoing_neighbors = new unsigned int[outgoing_neighbors_offset[V]];
     incoming_neighbors = new unsigned int[incoming_neighbors_offset[V]];
     attributes_in_order = new unsigned int[attributes_in_order_offset[largest_att+1]];
 
 
-     std::cout << largest_att << std::endl;
+    //std::cout << largest_att << std::endl;
 
     unsigned int j = 0;
     unsigned int k = 0;
@@ -94,13 +94,13 @@ Graph::Graph(bool mode, string input_file){
     for(unsigned int i=0;i<largest_att+1;++i){
         
         set<unsigned int> s;
-        std::cout << "looping atts " << i << std::endl;
+        //std::cout << "looping atts " << i << std::endl;
         s = attribute_set[i];
-        std::cout << s.size() << std::endl;
+        //std::cout << s.size() << std::endl;
         for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
             
             attributes_in_order[l] = *p;
-            std::cout << l << std::endl;
+            //std::cout << l << std::endl;
             l++;
         }
 
@@ -108,7 +108,6 @@ Graph::Graph(bool mode, string input_file){
     }
     std::cout << "Done..." << std::endl;
 }
-
 
 void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoing_neighbors_set,vector<set<unsigned int>> &incoming_neighbors_set, vector<set<unsigned int>> &attribute_set){
 
@@ -176,8 +175,8 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
             E++;
         }
     }
-    std::cout << largest_att<< std::endl;
-    std::cout << "before atts..."<< std::endl;
+    //std::cout << largest_att<< std::endl;
+    //std::cout << "before atts..."<< std::endl;
 
 
     // currently, this makes sure we have a list for all potential attributes
@@ -188,7 +187,7 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
         attribute_set.push_back(temp1);
     }
 
-    std::cout << "after first atts..."<< std::endl;
+    //std::cout << "after first atts..."<< std::endl;
 
     for(int i = 0; i < V; i++){
 
@@ -200,10 +199,9 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
 
     infile.close();
 
-    std::cout << "Reading Graph Complete..."<< std::endl;
+    //std::cout << "Reading Graph Complete..."<< std::endl;
 
 }
-
 
 void Graph::printGraph() {
 
@@ -234,13 +232,13 @@ void Graph::printGraph() {
 
 
         std::cout << "incoming_neighbors = ";
-        for (unsigned int i = 0; i < E; i++) {
+        for (unsigned int i = 0; i < V; i++) {
             std::cout << incoming_neighbors[i] << " ";
         }
         std::cout << std::endl;
 
         std::cout << "outgoing_neighbors = ";
-        for (unsigned int i = 0; i < E; i++) {
+        for (unsigned int i = 0; i < V; i++) {
             std::cout << outgoing_neighbors[i] << " ";
         }
         std::cout << std::endl;
@@ -257,37 +255,6 @@ void Graph::printGraph() {
         }
         std::cout << std::endl;
 
-/**
-        std::cout << "parents_offset = ";
-        for (unsigned int i = 0; i < V; i++) {
-            std::cout << parents_offset[i] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "parents = ";
-        for (unsigned int i = 0; i < E; i++) {
-            std::cout << parents[i] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "children = ";
-        for (unsigned int i = 0; i < E; i++) {
-            std::cout << children[i] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "children_offset = ";
-        for (unsigned int i = 0; i < V; i++) {
-            std::cout << children_offset[i] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "order_sequence = ";
-        for (unsigned int i = 0; i < V; i++) {
-            std::cout << order_sequence[i] << " ";
-        }
-        std::cout << std::endl;
-*/
         std::cout << "signatures = ";
         for (unsigned int i = 0; i < Signature_Properties*V; i++) {
             std::cout << signatures[i] << " ";
@@ -295,4 +262,135 @@ void Graph::printGraph() {
         std::cout << "Graph Printed." << std::endl;
 
 
+}
+
+class QueueValue
+{
+   unsigned int node;
+   float score;
+public:
+   QueueValue(unsigned int node, float score)
+   {
+      this->node = node;
+      this->score = score;
+   }
+   unsigned int getNode() const { return node; }
+   float getScore() const { return score; }
+};
+
+class QueueComparator
+{
+public:
+    int operator() (const QueueValue& q1, const QueueValue& q2)
+    {
+        return q1.getScore() > q2.getScore();
+    }
+};
+
+void Graph::create_matching_order(Graph d){
+    // first, go through all the nodes and find the root node
+    //      needs to have at least 2 neighbors
+    //      needs to have the lowest node_viability_score
+    unsigned int min_node = 0;
+    float min_score = 10000000.0;
+    float node_viability = 0.0;
+
+    for(int i = 0; i<V; i++){
+
+        if (signatures[i*Signature_Properties+0] >= 2 || signatures[i*Signature_Properties+1] >= 2 ){
+            // this is a core node.
+            node_viability = get_node_viability_score(i, attributes, d.attributes_in_order_offset, signatures);
+
+            if ( min_score > node_viability ){
+                min_score = node_viability;
+                min_node = i;
+            }
+        }
+    }
+    unsigned int count = 0;
+    unsigned int node;
+    unsigned int start;
+    unsigned int end;
+    unsigned int neighbor;
+
+    set<unsigned int> added;
+    priority_queue <QueueValue, vector<QueueValue>, QueueComparator > pq;
+
+    pq.push(QueueValue(min_node,min_score));
+
+    matching_order = new unsigned int[V];
+    
+    while(!pq.empty()){
+
+        // grab out of the heap
+        QueueValue value = pq.top();
+        pq.pop();
+
+        node = value.getNode();
+
+        // add to the order
+        matching_order[count] = node;
+        count++;
+        added.insert(node);
+
+        // now iterate over this nodes outgoing children and add them to the queue
+        start = outgoing_neighbors_offset[node];
+        end = outgoing_neighbors_offset[node+1];
+
+        for(int i = 0; i < end - start; i++){
+
+            neighbor = outgoing_neighbors[start+i];           
+
+            if(!added.count(neighbor)){
+                added.insert(neighbor);
+                pq.push(QueueValue(neighbor, get_node_viability_score(neighbor, attributes, d.attributes_in_order_offset, signatures)));
+            }
+        }
+
+        // now iterate over this nodes incoming children and add them to the queue
+        start = incoming_neighbors_offset[node];
+        end = incoming_neighbors_offset[node+1];
+
+        for(int i = 0; i < end - start; i++){
+
+            neighbor = incoming_neighbors[start+i];           
+
+            if(!added.count(neighbor)){
+                added.insert(neighbor);
+                pq.push(QueueValue(neighbor, get_node_viability_score(neighbor, attributes, d.attributes_in_order_offset, signatures)));
+            }
+        }
+
+    }
+
+
+
+
+
+}
+
+/**
+ * this is the score
+ * |C(node)| / degree   
+ * 
+ * it only considers out neighbors for degree
+*/
+float get_node_viability_score(unsigned int query_node, unsigned int *query_atts, unsigned int *data_atts_orders_offset,
+                                          unsigned int *query_signatures){
+
+    // grab the query nodes attribute
+    unsigned int attribute = query_atts[query_node];
+
+    // grab the number of datanodes with that attribute
+    unsigned int canidates = data_atts_orders_offset[attribute+1] - data_atts_orders_offset[attribute];
+
+    // if it has more than 0 neighbors
+    if( (query_signatures[query_node*Signature_Properties+1] + query_signatures[query_node*Signature_Properties+0]) != 0 ){
+
+        // return this math
+        return static_cast< float >( canidates ) / (query_signatures[query_node*Signature_Properties+1] + query_signatures[query_node*Signature_Properties+0]);
+    }
+    else{
+        return 0.0;
+    }
 }
