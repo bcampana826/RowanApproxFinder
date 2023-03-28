@@ -6,7 +6,6 @@
 #include <set>
 #include <fstream>
 #include <iostream>
-#include <cstdio>
 #include <queue>
 #include "omp.h"
 #include "cuda.h"
@@ -15,8 +14,8 @@
 #define Signature_Properties 2
 #define In_degree_offset 0
 #define Out_degree_offset 1
-#define BLK_NUMS 100
-#define BLK_DIM 200
+#define BLK_NUMS 108
+#define BLK_DIM 512
 #define GPU_TABLE_SIZES = 5000
 #define WEIGHT_MISSING_EDGE 1
 #define WEIGHT_MISSING_VERT 1

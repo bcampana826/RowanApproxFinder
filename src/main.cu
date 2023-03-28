@@ -30,10 +30,11 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
     cout<<"end copying graph to gpu..."<<endl;
 
     // Init Searching on that Root
-    initialize_searching<<<5,5>>>(extra_pointers.result_lengths);
+    initialize_searching<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers);
+    cudaDeviceSynchronize();
     cout<<"done searching"<<endl;
 
-    for(int i = 1; i < query_graph.V; i++){
+    for(int i = 0; i < query_graph.V; i++){
         cout<<extra_pointers.result_lengths[i]<<endl;
     }
 

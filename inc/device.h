@@ -8,8 +8,6 @@ __device__ float get_node_viability_score_device(unsigned int query_node, unsign
 
 __device__ float get_score(G_pointers query_pointers,G_pointers data_pointers,E_pointers extra_pointers, unsigned int index, unsigned int iter);
 
-__global__ void initialize_searching(unsigned int *result_lengths);
-
-__global__ void initialize_searching(G_pointers query_pointers,G_pointers data_pointers, E_pointers extra_pointers, unsigned int *result_lengths);
+__global__ void initialize_searching(G_pointers query_pointers,G_pointers data_pointers, E_pointers extra_pointers);
 
 #endif

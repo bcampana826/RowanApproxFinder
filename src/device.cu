@@ -45,10 +45,6 @@ __device__ float get_score(G_pointers query_pointers,G_pointers data_pointers,E_
     return 0.0;
 }
 
-__global__ void initialize_searching(unsigned int *result_lengths){
-    //unsigned int index = atomicAdd(&result_lengths[0],1);
-    printf("calling kernel\n");
-}
 
 /**
  * 
@@ -58,13 +54,12 @@ __global__ void initialize_searching(unsigned int *result_lengths){
  * 
 */
 
-__global__ void initialize_searching(G_pointers query_pointers,G_pointers data_pointers,E_pointers extra_pointers, unsigned int *result_lengths){
+__global__ void initialize_searching(G_pointers query_pointers,G_pointers data_pointers,E_pointers extra_pointers){
         
-    //extra_pointers.result_lengths[0] = 0;
-    printf("calling kernel\n");
+    extra_pointers.result_lengths[0] = 0;
     // Initialize the first row of the results table
     unsigned int v = extra_pointers.matching_order[0];
-    result_lengths[0] = 5;
+
     unsigned int att = query_pointers.attributes[v];
 
     unsigned int candidates =  data_pointers.attributes_in_order_offset[att+1] - data_pointers.attributes_in_order_offset[att];
@@ -80,7 +75,7 @@ __global__ void initialize_searching(G_pointers query_pointers,G_pointers data_p
 
             unsigned int data = data_pointers.attributes_in_order[i+start];
 
-            unsigned int index = atomicAdd(&result_lengths[1],1);
+            unsigned int index = atomicAdd(&extra_pointers.result_lengths[1],1);
             //extra_pointers.indexes_table[index] = -1;
             extra_pointers.results_table[index] = data;
             extra_pointers.intra_v_table[index] = 0;
