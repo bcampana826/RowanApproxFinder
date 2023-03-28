@@ -29,32 +29,13 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
     malloc_extra_to_gpu_memory(extra_pointers,query_graph.V,query_graph.matching_order);
     cout<<"end copying graph to gpu..."<<endl;
 
+    // Init Searching on that Root
+    initialize_searching<<<5,5>>>(extra_pointers.result_lengths);
+    cout<<"done searching"<<endl;
 
-
-    //generate_matching_order<<<1,1>>>(query_pointers,extra_pointers.matching_order,data_pointers.attributes_in_order_offset);
-
-    std::cout << "matching = ";
-    for (unsigned int i = 0; i < query_graph.V; i++) {
-        std::cout << query_graph.matching_order[i] << " ";
+    for(int i = 1; i < query_graph.V; i++){
+        cout<<extra_pointers.result_lengths[i]<<endl;
     }
-    
-
-
-
-    /**
-     * cout<<"Query..."<<endl;
-     * query_graph.printGraph();
-     *  cout<<"Data..."<<endl;
-     *  data_graph.printGraph();
-    */
-
-    // Find Root and Matching Order
-    cout<<"Testing Node Viability Score"<<endl;
-    //testing<<<1,1>>>(query_pointers,data_pointers,extra_pointers);
-
-
-
-
 
     return 0;
     /**

@@ -6,6 +6,7 @@
 #include <set>
 #include <fstream>
 #include <iostream>
+#include <cstdio>
 #include <queue>
 #include "omp.h"
 #include "cuda.h"
@@ -14,8 +15,9 @@
 #define Signature_Properties 2
 #define In_degree_offset 0
 #define Out_degree_offset 1
-#define BLK_NUMS 108
-#define BLK_DIM 1024
+#define BLK_NUMS 100
+#define BLK_DIM 200
+#define GPU_TABLE_SIZES = 5000
 #define WEIGHT_MISSING_EDGE 1
 #define WEIGHT_MISSING_VERT 1
 #define WEIGHT_INTRA_VERT 1
@@ -38,14 +40,11 @@ typedef struct G_pointers {
 
 typedef struct E_pointers {
     unsigned int* matching_order;
-
     unsigned int* result_lengths;
-
     unsigned int* results_table;
     unsigned int* indexes_table;
     unsigned int* scores_table;
     unsigned int* intra_v_table;
-
     unsigned long long int *write_pos;
 } E_pointers;
 

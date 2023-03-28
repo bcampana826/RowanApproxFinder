@@ -66,11 +66,12 @@ void malloc_extra_to_gpu_memory(E_pointers &e, unsigned int v, unsigned int *v_o
     chkerr(cudaMalloc(&(e.matching_order),(v)*sizeof(unsigned int)));
     chkerr(cudaMemcpy(e.matching_order,v_order,(v)*sizeof(unsigned int),cudaMemcpyHostToDevice));
 
-    chkerr(cudaMalloc(&(e.result_lengths),(v)*sizeof(unsigned int)));
+    chkerr(cudaMallocManaged(&(e.result_lengths),(v+1)*sizeof(unsigned int)));
+
 
     // datastructure
     // this table_size is variable based on workers, but for now im setting it constant
-    unsigned int table_size = 1 * sizeof(unsigned int);
+    unsigned int table_size = 5000 * sizeof(unsigned int);
     chkerr(cudaMalloc(&(e.results_table),table_size));
     chkerr(cudaMalloc(&(e.indexes_table),table_size));
     chkerr(cudaMalloc(&(e.scores_table),table_size));
