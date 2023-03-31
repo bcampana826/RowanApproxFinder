@@ -88,14 +88,7 @@ Graph::Graph(bool mode, string input_file){
 
     }
 
-    // sort? attr_in_order
-    /*
-    pseudo:
-    init indicies to 0, num_attr -1, respectively
-    sort:
-        compare attr_set(i) vs attr_set(j)
-        swap indicies though
-    */
+    // sort attributes_in_order
     vector<pair<unsigned int, unsigned int>> helper;
     
     #pragma omp parallel for
@@ -319,7 +312,6 @@ void Graph::create_matching_order(Graph d){
         }
     }
 
-    cout << "MIN NODE: " << min_node << endl;
     unsigned int count = 0;
     unsigned int node;
     unsigned int start;
