@@ -8,7 +8,7 @@ class Graph{
 public:
     unsigned int V;
     unsigned int E;
-    unsigned int largest_att;
+    unsigned int num_attributes;
     unsigned int Root;
     unsigned int AVG_DEGREE = 0;
 
