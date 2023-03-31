@@ -34,7 +34,7 @@ typedef struct G_pointers {
     unsigned int* attributes_in_order_offset;
     unsigned int V;
     unsigned int E;
-    unsigned int largest_att;
+    unsigned int num_attributes;
 } G_pointers; //graph related
 
 typedef struct E_pointers {

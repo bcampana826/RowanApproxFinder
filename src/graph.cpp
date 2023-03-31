@@ -33,31 +33,27 @@ Graph::Graph(bool mode, string input_file){
         outgoing_neighbors_offset[i] = 0;
     }
 
-    // pre load the attributes
-    // largest att always needs to be +1 because atts aren't gaurenteed to be 0 based
-    attributes_in_order_offset = new unsigned int[(largest_att+1)+1];
+    // empty spot for leading offset
+    attributes_in_order_offset = new unsigned int[(num_attributes+1)];
 
     //std::cout << "Before save..." << std::endl;
 
     #pragma omp parallel for
-    for(unsigned int i=0;i<(largest_att+1)+1;++i){
+    for(unsigned int i=0, end = num_attributes + 1; i < end;++i){
         attributes_in_order_offset[i] = 0;
     }
 
     
-
-    unsigned int bound = (V > largest_att) ? V : largest_att;
-    
     //std::cout << "Before fill..." << std::endl;
 
-    for(unsigned int i=1;i<bound+2;++i){
+    for(unsigned int i=1, end = 1 + ((V > num_attributes) ? (V+1) : num_attributes);
+        i < end;++i){
 
         if(i < V+1){
             incoming_neighbors_offset[i] += incoming_neighbors_offset[i-1] + incoming_neighbors_set[i-1].size();
             outgoing_neighbors_offset[i] += outgoing_neighbors_offset[i-1] + outgoing_neighbors_set[i-1].size();
         }
-        if(i < (largest_att+1)+1){
-            // this is +2. this is because attributes might not be 0 based
+        if(i < (num_attributes+1)){
             attributes_in_order_offset[i] += attributes_in_order_offset[i-1] + attribute_set[i-1].size();
         }
     }
@@ -67,10 +63,11 @@ Graph::Graph(bool mode, string input_file){
 
     outgoing_neighbors = new unsigned int[outgoing_neighbors_offset[V]];
     incoming_neighbors = new unsigned int[incoming_neighbors_offset[V]];
-    attributes_in_order = new unsigned int[attributes_in_order_offset[largest_att+1]];
+    // should not this be num_attributes ?
+    attributes_in_order = new unsigned int[num_attributes];
 
 
-    //std::cout << largest_att << std::endl;
+    //std::cout << num_attributes << std::endl;
 
     unsigned int j = 0;
     unsigned int k = 0;
@@ -91,21 +88,32 @@ Graph::Graph(bool mode, string input_file){
 
     }
 
-    for(unsigned int i=0;i<largest_att+1;++i){
-        
-        set<unsigned int> s;
-        //std::cout << "looping atts " << i << std::endl;
-        s = attribute_set[i];
-        //std::cout << s.size() << std::endl;
-        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
-            
-            attributes_in_order[l] = *p;
-            //std::cout << l << std::endl;
-            l++;
-        }
-
-
+    // sort? attr_in_order
+    /*
+    pseudo:
+    init indicies to 0, num_attr -1, respectively
+    sort:
+        compare attr_set(i) vs attr_set(j)
+        swap indicies though
+    */
+    vector<pair<unsigned int, unsigned int>> helper;
+    
+    #pragma omp parallel for
+    for (unsigned int i = 0; i < num_attributes; ++i) {
+        pair<unsigned int, unsigned int> next;
+        next.first = attribute_set[i].size();
+        next.second = i;
+        helper.push_back(next);
     }
+
+    // sort by sizes, will copy indicies
+    sort(helper.begin(), helper.end());
+    
+    #pragma omp parallel for
+    for (unsigned int i = 0; i < num_attributes; ++i) {
+        attributes_in_order[i] = helper[i].second;
+    }
+
     std::cout << "Done..." << std::endl;
 }
 
@@ -146,7 +154,9 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
     E = 0;
 
    // set<unsigned int> unique_attributes;
-    largest_att = 0;
+    // if we end up using set unique_attr
+    // def remove finding num_attributes manually (below)
+    num_attributes = 0;
 
     while (getline(infile, line)) {
         
@@ -157,8 +167,8 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
        //     unique_attributes.insert(stoi(split_list[2]));
             counter++;
 
-            if (stoi(split_list[2]) > largest_att){
-                largest_att = stoi(split_list[2]);
+            if (stoi(split_list[2]) > num_attributes) {
+                num_attributes = stoi(split_list[2]);
             }
 
 
@@ -175,14 +185,15 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
             E++;
         }
     }
-    //std::cout << largest_att<< std::endl;
+
+    // + 1 to max label = num labels
+    ++num_attributes;
+
+    //std::cout << num_attributes<< std::endl;
     //std::cout << "before atts..."<< std::endl;
 
 
-    // currently, this makes sure we have a list for all potential attributes
-    // some may be unused, like if our only attributes are 100 and 150, then
-    // we have 148 unused lists, definately something to look at
-    for(int i = 0; i < largest_att+1; i++){
+    for(int i = 0; i < num_attributes; i++){
         set<unsigned int> temp1;
         attribute_set.push_back(temp1);
     }
@@ -209,7 +220,7 @@ void Graph::printGraph() {
 
         std::cout << "V = " << V << std::endl;
         std::cout << "E = " << E << std::endl;
-        std::cout << "Largest Atts = " << largest_att << std::endl;
+        std::cout << "Number of attributes6 = " << num_attributes << std::endl;
    //     std::cout << "AVG_DEGREE = " << AVG_DEGREE << std::endl;
 
         std::cout << "attributes = ";
@@ -219,7 +230,7 @@ void Graph::printGraph() {
         std::cout << std::endl;
 
         std::cout << "attributes_in_order_offset = ";
-        for (unsigned int i = 0; i < largest_att+2; i++) {
+        for (unsigned int i = 0; i < num_attributes; i++) {
             std::cout << attributes_in_order_offset[i] << " ";
         }
         std::cout << std::endl;
@@ -307,6 +318,8 @@ void Graph::create_matching_order(Graph d){
             }
         }
     }
+
+    cout << "MIN NODE: " << min_node << endl;
     unsigned int count = 0;
     unsigned int node;
     unsigned int start;
