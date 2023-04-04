@@ -10,4 +10,7 @@ __device__ float get_score(G_pointers query_pointers,G_pointers data_pointers,E_
 
 __global__ void initialize_searching(G_pointers query_pointers,G_pointers data_pointers, E_pointers extra_pointers);
 
+__global__ void approximate_search_kernel(G_pointers query_pointers,G_pointers data_pointers, E_pointers extra_pointers, unsigned int iter,
+                                          unsigned int jobs, unsigned int * global_count);
+
 #endif
