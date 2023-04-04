@@ -20,30 +20,33 @@
 #define WEIGHT_MISSING_EDGE 1
 #define WEIGHT_MISSING_VERT 1
 #define WEIGHT_INTRA_VERT 1
+#define MID_FIND_SIM_SCORE 0.5
 
 using namespace std;
 
-typedef struct G_pointers {
-    unsigned int* outgoing_neighbors;
-    unsigned int* outgoing_neighbors_offset;
-    unsigned int* signatures;
-    unsigned int* incoming_neighbors; 
-    unsigned int* incoming_neighbors_offset;
-    unsigned int* attributes;
-    unsigned int* attributes_in_order;
-    unsigned int* attributes_in_order_offset;
+typedef struct G_pointers
+{
+    unsigned int *outgoing_neighbors;
+    unsigned int *outgoing_neighbors_offset;
+    unsigned int *signatures;
+    unsigned int *incoming_neighbors;
+    unsigned int *incoming_neighbors_offset;
+    unsigned int *attributes;
+    unsigned int *attributes_in_order;
+    unsigned int *attributes_in_order_offset;
     unsigned int V;
     unsigned int E;
     unsigned int num_attributes;
-} G_pointers; //graph related
+} G_pointers; // graph related
 
-typedef struct E_pointers {
-    unsigned int* matching_order;
-    unsigned int* result_lengths;
-    unsigned int* results_table;
-    unsigned int* indexes_table;
-    unsigned int* scores_table;
-    unsigned int* intra_v_table;
+typedef struct E_pointers
+{
+    unsigned int *matching_order;
+    unsigned int *result_lengths;
+    unsigned int *results_table;
+    unsigned int *indexes_table;
+    unsigned int *scores_table;
+    unsigned int *intra_v_table;
     unsigned long long int *write_pos;
 } E_pointers;
 
