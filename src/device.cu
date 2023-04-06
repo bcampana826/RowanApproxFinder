@@ -74,11 +74,13 @@ __global__ void initialize_searching(G_pointers query_pointers, G_pointers data_
     // parrallel, so skip for each thread
     for (unsigned int i = globalIndex; i < candidates; i += totalThreads)
     {
-
+        printf("(%d)",i);
         unsigned int data = data_pointers.attributes_in_order[i + start];
 
         unsigned int index = atomicAdd(&extra_pointers.result_lengths[1], 1);
         // extra_pointers.indexes_table[index] = -1;
+        printf("{%d}",index);
+        printf("[%d]",data);
         extra_pointers.results_table[index] = data;
         extra_pointers.intra_v_table[index] = 0;
 
@@ -87,10 +89,6 @@ __global__ void initialize_searching(G_pointers query_pointers, G_pointers data_
     }
 }
 
-__device__ void candidate_sim_score(unsigned int *partial_paths, unsigned int node_to_check, unsigned int iter, unsigned int *data_out_neighbors,
-                                    unsigned int *data_in_neighbors, unsigned int *data_in_offset, unsigned int *data_out_offset)
-{
-}
 
 __device__ void construct_partial_path(unsigned int *partial_paths, unsigned int *counter, unsigned int *result_lengths, unsigned int *index_table,
                                        unsigned int *results_table, unsigned int lane_id, unsigned int warp_id, unsigned int iter,
@@ -117,9 +115,11 @@ __device__ void construct_partial_path(unsigned int *partial_paths, unsigned int
             }
 
             partial_paths[warp_id * MAX_QUERY_NODES + i] = results_table[vertexLocation];
+            printf("%d-%d-",warp_id,results_table[vertexLocation]);
         }
     }
 }
+/**
 
 __device__ bool check_data_node_query_node_map_score(unsigned int *partial_paths, unsigned int iter, unsigned int data_node,
                                                      G_pointers query_pointers, G_pointers data_pointers, E_pointers extra_pointers)
@@ -195,7 +195,6 @@ __device__ bool check_data_node_query_node_map_score(unsigned int *partial_paths
  *
  *
  *
- */
 __device__ void find_good_canidates(unsigned int *partial_paths, unsigned int lane_id, unsigned int iter, unsigned int *candidates,
                                     unsigned int *buffer, unsigned int *temp_neighbors, G_pointers query_pointers, G_pointers data_pointers,
                                     E_pointers extra_pointers)
@@ -222,10 +221,11 @@ __device__ void find_good_canidates(unsigned int *partial_paths, unsigned int la
         unsigned int added_id = threadIdx.x;
         while (true)
         {
-            /* code */
+            /* code 
             unsigned int node;
             unsigned int neighbor;
             unsigned int sum = 0;
+            bool working = false;
 
             for (unsigned int j = 0; j < jobs; j++)
             {
@@ -234,13 +234,36 @@ __device__ void find_good_canidates(unsigned int *partial_paths, unsigned int la
                 {
                     node = j;
                     neighbor = added_id - sum;
+                    working = true;
+                    break;
                 }
                 else
                 {
                     sum += (data_pointer.outgoing_neighbors_offset[temp_neighbors[j] + 1] - data_pointer.outgoing_neighbors_offset[temp_neighbors[j]]);
                 }
             }
+
+            if(!working){
+                break;
+            }
+
+            unsigned int start = data_pointer.outgoing_neighbors_offset[node];
+            if (data_pointers.attributes[data_pointer.outgoing_neighbors[start + neighbor]] == query_att)
+            {
+                if (check_data_node_query_node_map_score(partial_paths, iter, data_pointers.attributes[data_pointer.outgoing_neighbors[start + j]],
+                                                            query_pointers, data_pointers, extra_pointers))
+                {
+                    // found a candidate
+                }
+            }
+
+            
         }
+
+
+
+
+
         (int i = threadIdx.x; i < jobs; i += 32)
         {
 
@@ -263,7 +286,7 @@ __device__ void find_good_canidates(unsigned int *partial_paths, unsigned int la
         }
     }
 }
-
+*/
 __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers data_pointers, E_pointers extra_pointers,
                                           unsigned int iter, unsigned int jobs, unsigned int *global_count)
 {
@@ -305,6 +328,16 @@ __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers 
         construct_partial_path(partial_paths, counter, extra_pointers.result_lengths, extra_pointers.indexes_table, extra_pointers.results_table,
                                lane_id, warp_id, iter, pre_idx);
 
-        find_good_canidates(&partial_paths[warp_id * MAX_QUERY_NODES], G_pointers query_pointers, G_pointers data_pointers)
+        if (lane_id == 0)
+        {
+            printf("%d,%d:",warp_id,pre_idx);
+            for (int i = 0; i < 5; ++i) {
+                printf("%d ", partial_paths[warp_id*MAX_QUERY_NODES+i]);
+            }
+            printf("-----",warp_id,pre_idx);
+        }
+
+
+        //find_good_canidates(&partial_paths[warp_id * MAX_QUERY_NODES], G_pointers query_pointers, G_pointers data_pointers)
     }
 }

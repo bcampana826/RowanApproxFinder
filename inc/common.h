@@ -16,11 +16,14 @@
 #define Out_degree_offset 1
 #define BLK_NUMS 108
 #define BLK_DIM 512
-#define GPU_TABLE_SIZES = 5000
+#define GPU_TABLE_SIZES 5000
 #define WEIGHT_MISSING_EDGE 1
 #define WEIGHT_MISSING_VERT 1
 #define WEIGHT_INTRA_VERT 1
 #define MID_FIND_SIM_SCORE 0.5
+#define MAX_QUERY_NODES 12
+#define MAX_EDGES 112
+#define WARPS_EACH_BLK (BLK_DIM/32)
 
 using namespace std;
 

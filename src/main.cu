@@ -13,6 +13,8 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
 
     Graph data_graph(false,data_file);
 
+    data_graph.printGraph();
+
     query_graph.create_matching_order(data_graph);
 
     G_pointers query_pointers;
@@ -28,6 +30,10 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
 
     malloc_extra_to_gpu_memory(extra_pointers,query_graph.V,query_graph.matching_order);
     cout<<"end copying graph to gpu..."<<endl;
+
+    for (unsigned int i = 0; i < data_graph.V ; i++) {
+        printf("%d ",data_graph.attributes_in_order[i]);
+    }
 
     // Init Searching on that Root
     initialize_searching<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers);

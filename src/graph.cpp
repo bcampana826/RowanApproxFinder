@@ -39,14 +39,14 @@ Graph::Graph(bool mode, string input_file){
     //std::cout << "Before save..." << std::endl;
 
     #pragma omp parallel for
-    for(unsigned int i=0, end = num_attributes + 1; i < end;++i){
+    for(unsigned int i=0, end = num_attributes + 1; i < end;i++){
         attributes_in_order_offset[i] = 0;
     }
 
     
     //std::cout << "Before fill..." << std::endl;
 
-    for(unsigned int i=1, end = 1 + ((V > num_attributes) ? (V+1) : num_attributes);
+    for(unsigned int i=1, end = 1 + ((V > num_attributes) ? (V+1) : num_attributes+1);
         i < end;++i){
 
         if(i < V+1){
@@ -88,25 +88,19 @@ Graph::Graph(bool mode, string input_file){
 
     }
 
-    // sort attributes_in_order
-    vector<pair<unsigned int, unsigned int>> helper;
-    
-    #pragma omp parallel for
-    for (unsigned int i = 0; i < num_attributes; ++i) {
-        pair<unsigned int, unsigned int> next;
-        next.first = attribute_set[i].size();
-        next.second = i;
-        helper.push_back(next);
-    }
+    for(unsigned int i=0;i<num_attributes;++i){
 
-    // sort by sizes, will copy indicies
-    sort(helper.begin(), helper.end());
-    
-    #pragma omp parallel for
-    for (unsigned int i = 0; i < num_attributes; ++i) {
-        attributes_in_order[i] = helper[i].second;
-    }
+        set<unsigned int> s;
+        //std::cout << "looping atts " << i << std::endl;
+        s = attribute_set[i];
+        //std::cout << s.size() << std::endl;
+        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
 
+            attributes_in_order[l] = *p;
+            //std::cout << l << std::endl;
+            l++;
+        }
+    }
     std::cout << "Done..." << std::endl;
 }
 
@@ -213,7 +207,7 @@ void Graph::printGraph() {
 
         std::cout << "V = " << V << std::endl;
         std::cout << "E = " << E << std::endl;
-        std::cout << "Number of attributes6 = " << num_attributes << std::endl;
+        std::cout << "Number of attributes = " << num_attributes << std::endl;
    //     std::cout << "AVG_DEGREE = " << AVG_DEGREE << std::endl;
 
         std::cout << "attributes = ";
@@ -223,7 +217,7 @@ void Graph::printGraph() {
         std::cout << std::endl;
 
         std::cout << "attributes_in_order_offset = ";
-        for (unsigned int i = 0; i < num_attributes; i++) {
+        for (unsigned int i = 0; i < num_attributes+1; i++) {
             std::cout << attributes_in_order_offset[i] << " ";
         }
         std::cout << std::endl;
