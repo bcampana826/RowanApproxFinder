@@ -48,13 +48,23 @@ void malloc_graph_to_gpu_memory(Graph &g, G_pointers &p, bool query){
     chkerr(cudaMalloc(&(p.attributes_in_order_offset),(g.num_attributes+1)*sizeof(unsigned int)));
     chkerr(cudaMemcpy(p.attributes_in_order_offset,g.attributes_in_order_offset,(g.num_attributes+1)*sizeof(unsigned int),cudaMemcpyHostToDevice));
 
-    //std::cout<<"9"<<std::endl;
+    std::cout<<"7"<<std::endl;
+    chkerr(cudaMalloc(&(p.two_hop_neighbors),g.two_hop_neighbors_offset[g.V]*sizeof(unsigned int)));
+    chkerr(cudaMemcpy(p.two_hop_neighbors,g.two_hop_neighbors,g.two_hop_neighbors_offset[g.V]*sizeof(unsigned int),cudaMemcpyHostToDevice));
+
+    std::cout<<"8"<<std::endl;
+    chkerr(cudaMalloc(&(p.two_hop_neighbors_offset),(g.V+1)*sizeof(unsigned int)));
+    chkerr(cudaMemcpy(p.two_hop_neighbors_offset,g.two_hop_neighbors_offset,(g.V+1)*sizeof(unsigned int),cudaMemcpyHostToDevice));
+
+    std::cout<<"9"<<std::endl;
     p.V = g.V;
 
     p.E = g.E;
 
     //std::cout<<"10"<<std::endl;
     p.num_attributes = g.num_attributes;
+
+    
 
 }
 

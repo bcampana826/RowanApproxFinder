@@ -37,6 +37,8 @@ typedef struct G_pointers
     unsigned int *attributes;
     unsigned int *attributes_in_order;
     unsigned int *attributes_in_order_offset;
+    unsigned int *two_hop_neighbors_offset;
+    unsigned int *two_hop_neighbors;
     unsigned int V;
     unsigned int E;
     unsigned int num_attributes;
