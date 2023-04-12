@@ -20,10 +20,12 @@
 #define WEIGHT_MISSING_EDGE 1
 #define WEIGHT_MISSING_VERT 1
 #define WEIGHT_INTRA_VERT 1
-#define MID_FIND_SIM_SCORE 0.5
+#define MIN_FIND_SIM_SCORE 0.5
 #define MAX_QUERY_NODES 12
 #define MAX_EDGES 112
-#define WARPS_EACH_BLK (BLK_DIM/32)
+#define WARPS_EACH_BLK (BLK_DIM / 32)
+#define BUFFER_PER_WARP 5000
+#define BUFFER_TABLE_SIZE (BUFFER_PER_WARP * WARPS_EACH_BLK * BLK_NUMS)
 
 using namespace std;
 
@@ -53,6 +55,7 @@ typedef struct E_pointers
     unsigned int *scores_table;
     unsigned int *intra_v_table;
     unsigned long long int *write_pos;
+    unsigned int *helper_buffer;
 } E_pointers;
 
 #endif
