@@ -14,9 +14,9 @@
 #define Signature_Properties 2
 #define In_degree_offset 0
 #define Out_degree_offset 1
-#define BLK_NUMS 108
-#define BLK_DIM 512
-#define GPU_TABLE_SIZES 5000
+#define BLK_NUMS 2
+#define BLK_DIM 64
+#define GPU_TABLE_SIZES 10000
 #define WEIGHT_MISSING_EDGE 1
 #define WEIGHT_MISSING_VERT 1
 #define WEIGHT_INTRA_VERT 1
@@ -24,7 +24,7 @@
 #define MAX_QUERY_NODES 12
 #define MAX_EDGES 112
 #define WARPS_EACH_BLK (BLK_DIM / 32)
-#define BUFFER_PER_WARP 5000
+#define BUFFER_PER_WARP 100000
 #define BUFFER_TABLE_SIZE (BUFFER_PER_WARP * WARPS_EACH_BLK * BLK_NUMS)
 
 using namespace std;

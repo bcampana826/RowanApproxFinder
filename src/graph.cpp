@@ -104,8 +104,8 @@ Graph::Graph(bool mode, string input_file){
         }
     }
 
-    std::cout << "Gen 2 Hop.." << endl;
-    generate_2_hop_arrays();
+    //std::cout << "Gen 2 Hop.." << endl;
+    //generate_2_hop_arrays();
 
 
     std::cout << "Done..." << std::endl;
@@ -334,13 +334,13 @@ void Graph::printGraph() {
 
 
         std::cout << "incoming_neighbors = ";
-        for (unsigned int i = 0; i < V; i++) {
+        for (unsigned int i = 0; i < incoming_neighbors_offset[V]; i++) {
             std::cout << incoming_neighbors[i] << " ";
         }
         std::cout << std::endl;
 
         std::cout << "outgoing_neighbors = ";
-        for (unsigned int i = 0; i < V; i++) {
+        for (unsigned int i = 0; i < outgoing_neighbors_offset[V]; i++) {
             std::cout << outgoing_neighbors[i] << " ";
         }
         std::cout << std::endl;
@@ -466,6 +466,10 @@ void Graph::create_matching_order(Graph d){
 
     }
 
+    std::cout << "Matching Order = ";
+    for (unsigned int i = 0; i < V; i++) {
+        std::cout << matching_order[i] << " ";
+    }
 
 
 
