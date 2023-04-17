@@ -23,6 +23,9 @@ public:
     unsigned int * incoming_neighbors_offset;
     unsigned int * outgoing_neighbors_offset;
 
+    unsigned int * two_hop_neighbors;
+    unsigned int * two_hop_neighbors_offset;
+
     unsigned int * matching_order;
     unsigned int * signatures;
     
@@ -30,12 +33,14 @@ public:
     void gen_root_node_and_matching_order();
     void printGraph();
     void create_matching_order(Graph data);
+    void generate_2_hop_arrays();
     Graph(bool mode,std::string input_file);
     //mode 0 for query graph, mode 1 for data graph
 };
 
 float get_node_viability_score(unsigned int query_node, unsigned int *query_atts, unsigned int *data_atts_orders_offset,
                                           unsigned int *query_signatures);
+
 
 
 #endif

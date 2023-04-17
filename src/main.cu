@@ -13,6 +13,8 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
 
     Graph data_graph(false,data_file);
 
+    data_graph.printGraph();
+
     query_graph.create_matching_order(data_graph);
 
     G_pointers query_pointers;
@@ -29,14 +31,40 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
     malloc_extra_to_gpu_memory(extra_pointers,query_graph.V,query_graph.matching_order);
     cout<<"end copying graph to gpu..."<<endl;
 
+    for (unsigned int i = 0; i < data_graph.V ; i++) {
+        printf("%d ",data_graph.attributes_in_order[i]);
+    }
+
     // Init Searching on that Root
     initialize_searching<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers);
     cudaDeviceSynchronize();
-    cout<<"done searching"<<endl;
 
-    for(int i = 0; i < query_graph.V; i++){
-        cout<<extra_pointers.result_lengths[i]<<endl;
+    cout<<"Initial Canidates: "<<extra_pointers.result_lengths[1]<<endl;
+
+
+    unsigned int *global_count;
+    cudaMalloc(&global_count,sizeof(unsigned int));
+
+    // if we have at least one match
+    if(extra_pointers.result_lengths[1] > 0){
+        
+        for(unsigned int iter = 1; iter < query_graph.V; iter++){
+
+            extra_pointers.result_lengths[iter+1] = extra_pointers.result_lengths[iter];
+
+            cudaMemset(global_count,0,sizeof(unsigned int));
+
+            unsigned int jobs_count = extra_pointers.result_lengths[iter] - extra_pointers.result_lengths[iter-1];
+
+            approximate_search_kernel<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers,iter,jobs_count,global_count);
+            cudaDeviceSynchronize();
+
+        }
+
+
+
     }
+
 
     return 0;
     /**

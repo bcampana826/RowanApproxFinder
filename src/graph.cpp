@@ -36,17 +36,17 @@ Graph::Graph(bool mode, string input_file){
     // empty spot for leading offset
     attributes_in_order_offset = new unsigned int[(num_attributes+1)];
 
-    //std::cout << "Before save..." << std::endl;
+    std::cout << "Before save..." << std::endl;
 
     #pragma omp parallel for
-    for(unsigned int i=0, end = num_attributes + 1; i < end;++i){
+    for(unsigned int i=0, end = num_attributes + 1; i < end;i++){
         attributes_in_order_offset[i] = 0;
     }
 
     
-    //std::cout << "Before fill..." << std::endl;
+    std::cout << "Before fill..." << std::endl;
 
-    for(unsigned int i=1, end = 1 + ((V > num_attributes) ? (V+1) : num_attributes);
+    for(unsigned int i=1, end = 1 + ((V > num_attributes) ? (V+1) : num_attributes+1);
         i < end;++i){
 
         if(i < V+1){
@@ -59,15 +59,15 @@ Graph::Graph(bool mode, string input_file){
     }
 
 
-    //std::cout << "Before iterate..." << std::endl;
+    std::cout << "Before iterate..." << std::endl;
 
     outgoing_neighbors = new unsigned int[outgoing_neighbors_offset[V]];
     incoming_neighbors = new unsigned int[incoming_neighbors_offset[V]];
     // should not this be num_attributes ?
-    attributes_in_order = new unsigned int[num_attributes];
+    attributes_in_order = new unsigned int[attributes_in_order_offset[num_attributes]];
 
 
-    //std::cout << num_attributes << std::endl;
+    std::cout << num_attributes << std::endl;
 
     unsigned int j = 0;
     unsigned int k = 0;
@@ -88,26 +88,124 @@ Graph::Graph(bool mode, string input_file){
 
     }
 
-    // sort attributes_in_order
-    vector<pair<unsigned int, unsigned int>> helper;
-    
-    #pragma omp parallel for
-    for (unsigned int i = 0; i < num_attributes; ++i) {
-        pair<unsigned int, unsigned int> next;
-        next.first = attribute_set[i].size();
-        next.second = i;
-        helper.push_back(next);
+    std::cout << "Before iterate..." << std::endl;
+
+    for(unsigned int i=0;i<num_attributes;++i){
+
+        set<unsigned int> s;
+        //std::cout << "looping atts " << i << std::endl;
+        s = attribute_set[i];
+        //std::cout << s.size() << std::endl;
+        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
+
+            attributes_in_order[l] = *p;
+            //std::cout << l << std::endl;
+            l++;
+        }
     }
 
-    // sort by sizes, will copy indicies
-    sort(helper.begin(), helper.end());
-    
-    #pragma omp parallel for
-    for (unsigned int i = 0; i < num_attributes; ++i) {
-        attributes_in_order[i] = helper[i].second;
-    }
+    std::cout << "Gen 2 Hop.." << endl;
+    generate_2_hop_arrays();
+
 
     std::cout << "Done..." << std::endl;
+}
+
+void Graph::generate_2_hop_arrays(){
+    
+    vector<set<unsigned int>> two_hop_set;
+    
+
+    for(unsigned int i=0;i<V;i++){
+        set<unsigned int> temp1;
+        two_hop_set.push_back(temp1);
+    }
+
+    std::cout << "Crazy Method.." << endl;
+    #pragma omp parallel for
+    for(unsigned int i=0;i < V;i++){
+
+
+
+        unsigned int two_start;
+        unsigned int two_end;
+        unsigned int node;
+        unsigned int one_start = outgoing_neighbors_offset[i];
+        unsigned int one_end = outgoing_neighbors_offset[i+1];
+        
+        for(unsigned int j=0;j<one_end-one_start;j++){
+
+
+            two_start = outgoing_neighbors_offset[outgoing_neighbors[one_start+j]];
+            two_end = outgoing_neighbors_offset[outgoing_neighbors[one_start+j]+1];
+            for(unsigned int k = 0; k<two_end-two_start; k++){
+                node = outgoing_neighbors[two_start+k];
+                if(node != i){
+                    two_hop_set[i].insert(node);
+                }
+            }
+
+
+            two_start = incoming_neighbors_offset[outgoing_neighbors[one_start+j]];
+            two_end = incoming_neighbors_offset[outgoing_neighbors[one_start+j]+1];
+            for(unsigned int k = 0; k<two_end-two_start; k++){
+                node = incoming_neighbors[two_start+k];
+                if(node != i){
+                    two_hop_set[i].insert(node);
+                }
+            }
+        }
+
+        one_start = incoming_neighbors_offset[i];
+        one_end = incoming_neighbors_offset[i+1];
+        for(unsigned int j=0;j<one_end-one_start;j++){
+
+            two_start = outgoing_neighbors_offset[incoming_neighbors[one_start+j]];
+            two_end = outgoing_neighbors_offset[incoming_neighbors[one_start+j]+1];
+            for(unsigned int k = 0; k<two_end-two_start; k++){
+                node = outgoing_neighbors[two_start+k];
+                if(node != i){
+                    two_hop_set[i].insert(node);
+                }
+            }
+
+
+            two_start = incoming_neighbors_offset[incoming_neighbors[one_start+j]];
+            two_end = incoming_neighbors_offset[incoming_neighbors[one_start+j]+1];
+            for(unsigned int k = 0; k<two_end-two_start; k++){
+                node = incoming_neighbors[two_start+k];
+                if(node != i){
+                    two_hop_set[i].insert(node);
+                }
+            }
+        }
+
+    }
+
+    std::cout << "after.." << endl;
+
+    two_hop_neighbors_offset = new unsigned int[V+1];
+    #pragma omp parallel for
+    for(unsigned int i = 0; i < V+1; i++){
+        two_hop_neighbors_offset[i] = 0;
+    }
+
+
+    for(unsigned int i = 1; i < V+1; i++){
+        two_hop_neighbors_offset[i] += two_hop_neighbors_offset[i-1] + two_hop_set[i-1].size();
+    }
+
+    two_hop_neighbors = new unsigned int[two_hop_neighbors_offset[V]];
+
+    unsigned int k=0;
+    for(unsigned int i=0; i<V; ++i){
+        set<unsigned int> s;
+        s = two_hop_set[i];
+        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
+            two_hop_neighbors[k] = *p;
+            k++;
+        }
+    }
 }
 
 void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoing_neighbors_set,vector<set<unsigned int>> &incoming_neighbors_set, vector<set<unsigned int>> &attribute_set){
@@ -203,7 +301,7 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
 
     infile.close();
 
-    //std::cout << "Reading Graph Complete..."<< std::endl;
+    std::cout << "Reading Graph Complete..."<< std::endl;
 
 }
 
@@ -213,7 +311,7 @@ void Graph::printGraph() {
 
         std::cout << "V = " << V << std::endl;
         std::cout << "E = " << E << std::endl;
-        std::cout << "Number of attributes6 = " << num_attributes << std::endl;
+        std::cout << "Number of attributes = " << num_attributes << std::endl;
    //     std::cout << "AVG_DEGREE = " << AVG_DEGREE << std::endl;
 
         std::cout << "attributes = ";
@@ -223,7 +321,7 @@ void Graph::printGraph() {
         std::cout << std::endl;
 
         std::cout << "attributes_in_order_offset = ";
-        for (unsigned int i = 0; i < num_attributes; i++) {
+        for (unsigned int i = 0; i < num_attributes+1; i++) {
             std::cout << attributes_in_order_offset[i] << " ";
         }
         std::cout << std::endl;
