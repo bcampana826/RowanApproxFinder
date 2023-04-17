@@ -48,12 +48,12 @@ void malloc_graph_to_gpu_memory(Graph &g, G_pointers &p, bool query)
     chkerr(cudaMemcpy(p.attributes_in_order_offset, g.attributes_in_order_offset, (g.num_attributes + 1) * sizeof(unsigned int), cudaMemcpyHostToDevice));
 
     std::cout << "7" << std::endl;
-    chkerr(cudaMalloc(&(p.two_hop_neighbors), g.two_hop_neighbors_offset[g.V] * sizeof(unsigned int)));
-    chkerr(cudaMemcpy(p.two_hop_neighbors, g.two_hop_neighbors, g.two_hop_neighbors_offset[g.V] * sizeof(unsigned int), cudaMemcpyHostToDevice));
+    //chkerr(cudaMalloc(&(p.two_hop_neighbors), g.two_hop_neighbors_offset[g.V] * sizeof(unsigned int)));
+    //chkerr(cudaMemcpy(p.two_hop_neighbors, g.two_hop_neighbors, g.two_hop_neighbors_offset[g.V] * sizeof(unsigned int), cudaMemcpyHostToDevice));
 
     std::cout << "8" << std::endl;
-    chkerr(cudaMalloc(&(p.two_hop_neighbors_offset), (g.V + 1) * sizeof(unsigned int)));
-    chkerr(cudaMemcpy(p.two_hop_neighbors_offset, g.two_hop_neighbors_offset, (g.V + 1) * sizeof(unsigned int), cudaMemcpyHostToDevice));
+    //chkerr(cudaMalloc(&(p.two_hop_neighbors_offset), (g.V + 1) * sizeof(unsigned int)));
+    //chkerr(cudaMemcpy(p.two_hop_neighbors_offset, g.two_hop_neighbors_offset, (g.V + 1) * sizeof(unsigned int), cudaMemcpyHostToDevice));
 
     std::cout << "9" << std::endl;
     p.V = g.V;
@@ -77,7 +77,8 @@ void malloc_extra_to_gpu_memory(E_pointers &e, unsigned int v, unsigned int *v_o
 
     // datastructure
     // this table_size is variable based on workers, but for now im setting it constant
-    unsigned int table_size = 5000 chkerr(cudaMalloc(&(e.results_table), table_size));
+    unsigned int table_size = 5000;
+    chkerr(cudaMalloc(&(e.results_table), table_size));
     chkerr(cudaMalloc(&(e.indexes_table), table_size));
     chkerr(cudaMalloc(&(e.scores_table), table_size));
     chkerr(cudaMalloc(&(e.intra_v_table), table_size));

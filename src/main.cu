@@ -13,8 +13,6 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
 
     Graph data_graph(false,data_file);
 
-    data_graph.printGraph();
-
     query_graph.create_matching_order(data_graph);
 
     G_pointers query_pointers;
@@ -31,9 +29,6 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
     malloc_extra_to_gpu_memory(extra_pointers,query_graph.V,query_graph.matching_order);
     cout<<"end copying graph to gpu..."<<endl;
 
-    for (unsigned int i = 0; i < data_graph.V ; i++) {
-        printf("%d ",data_graph.attributes_in_order[i]);
-    }
 
     // Init Searching on that Root
     initialize_searching<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers);
@@ -50,13 +45,22 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
         
         for(unsigned int iter = 1; iter < query_graph.V; iter++){
 
+
+
             extra_pointers.result_lengths[iter+1] = extra_pointers.result_lengths[iter];
 
             cudaMemset(global_count,0,sizeof(unsigned int));
 
             unsigned int jobs_count = extra_pointers.result_lengths[iter] - extra_pointers.result_lengths[iter-1];
 
+            cout<<"\niter: "<<iter<<" Jobs: "<<jobs_count<<endl;
+            cout<<"Finding "<<query_graph.matching_order[iter]<<endl;
+    
+
             approximate_search_kernel<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers,iter,jobs_count,global_count);
+
+
+
             cudaDeviceSynchronize();
 
         }
@@ -104,27 +108,4 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
 
 }
 
-/**
- *
-
-void gen_root_node_and_matching_order(Graph query, Graph data){
-
-    query.order_sequence = new unsigned int[query.V];
-
-    // find the root node first
-    for(unsigned int i=0; i<query.V; i++){
-
-        // if this node only has less than two neighbors, do not include
-        //      hmm, for this, im only going to consider outgoing for now
-        //      definetly worth taking a re-examination of this
-        if(query.signatures[i*Signature_Properties]+Out_degree_offset < 2){
-            continue;
-        }
-
-        
-
-
-    }
-
-*/
 
