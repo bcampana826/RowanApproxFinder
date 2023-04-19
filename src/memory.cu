@@ -88,4 +88,6 @@ void malloc_extra_to_gpu_memory(E_pointers &e, unsigned int v, unsigned int *v_o
 
     unsigned int buffer_size = BUFFER_TABLE_SIZE * sizeof(unsigned int);
     chkerr(cudaMalloc(&(e.helper_buffer), buffer_size));
+
+    
 }

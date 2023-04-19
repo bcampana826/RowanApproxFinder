@@ -14,7 +14,7 @@
 #define Signature_Properties 2
 #define In_degree_offset 0
 #define Out_degree_offset 1
-#define BLK_NUMS 2
+#define BLK_NUMS 32
 #define BLK_DIM 64
 #define GPU_TABLE_SIZES 10000
 #define WEIGHT_MISSING_EDGE 1
