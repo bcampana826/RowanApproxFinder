@@ -8,12 +8,13 @@ Graph::Graph(bool mode, string input_file){
     vector<set<unsigned int>> outgoing_neighbors_set;
     vector<set<unsigned int>> incoming_neighbors_set;
     vector<set<unsigned int>> attribute_set;
+    vector<set<unsigned int>> all_neighbors_set;
 
     /**
      * After this method, V, E, are saved, attributes array is created and filled
      * attribute set is not filled in yet, this will be filled in on next for loop
     */
-    read_graph_file(input_file, outgoing_neighbors_set, incoming_neighbors_set, attribute_set);
+    read_graph_file(input_file, outgoing_neighbors_set, incoming_neighbors_set, attribute_set,all_neighbors_set);
 
     signatures = new unsigned int[V*Signature_Properties];
 
@@ -25,12 +26,13 @@ Graph::Graph(bool mode, string input_file){
 
     incoming_neighbors_offset = new unsigned int[V+1];
     outgoing_neighbors_offset = new unsigned int[V+1];
-
+    all_neighbors_offset = new unsigned int[V+1];
 
     #pragma omp parallel for
     for(unsigned int i=0;i<V+1;++i){
         incoming_neighbors_offset[i] = 0;
         outgoing_neighbors_offset[i] = 0;
+        all_neighbors_offset[i] = 0;
     }
 
     // empty spot for leading offset
@@ -52,6 +54,7 @@ Graph::Graph(bool mode, string input_file){
         if(i < V+1){
             incoming_neighbors_offset[i] += incoming_neighbors_offset[i-1] + incoming_neighbors_set[i-1].size();
             outgoing_neighbors_offset[i] += outgoing_neighbors_offset[i-1] + outgoing_neighbors_set[i-1].size();
+            all_neighbors_offset[i] += all_neighbors_offset[i-1] + all_neighbors_set[i-1].size();
         }
         if(i < (num_attributes+1)){
             attributes_in_order_offset[i] += attributes_in_order_offset[i-1] + attribute_set[i-1].size();
@@ -63,6 +66,7 @@ Graph::Graph(bool mode, string input_file){
 
     outgoing_neighbors = new unsigned int[outgoing_neighbors_offset[V]];
     incoming_neighbors = new unsigned int[incoming_neighbors_offset[V]];
+    all_neighbors = new unsigned int[all_neighbors_offset[V]];
     // should not this be num_attributes ?
     attributes_in_order = new unsigned int[attributes_in_order_offset[num_attributes]];
 
@@ -71,6 +75,7 @@ Graph::Graph(bool mode, string input_file){
 
     unsigned int j = 0;
     unsigned int k = 0;
+    unsigned int h = 0;
     unsigned int l = 0;
 
     for(unsigned int i=0; i<V; ++i){
@@ -84,6 +89,11 @@ Graph::Graph(bool mode, string input_file){
         for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
             incoming_neighbors[k] = *p;
             k++;
+        }
+        s = all_neighbors_set[i];
+        for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
+            all_neighbors[h] = *p;
+            h++;
         }
 
     }
@@ -99,7 +109,7 @@ Graph::Graph(bool mode, string input_file){
         for(set<unsigned int>::iterator p = s.begin();p!=s.end();p++){
 
             attributes_in_order[l] = *p;
-            //std::cout << l << std::endl;
+            std::cout << l << std::endl;
             l++;
         }
     }
@@ -208,7 +218,8 @@ void Graph::generate_2_hop_arrays(){
     }
 }
 
-void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoing_neighbors_set,vector<set<unsigned int>> &incoming_neighbors_set, vector<set<unsigned int>> &attribute_set){
+void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoing_neighbors_set,vector<set<unsigned int>> 
+                            &incoming_neighbors_set, vector<set<unsigned int>> &attribute_set, vector<set<unsigned int>> &all_neighbors_set){
 
     std::cout << "Reading Graph..."<< std::endl;
 
@@ -234,8 +245,10 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
     for(unsigned int i=0;i<V;++i){
         set<unsigned int> temp1;
         set<unsigned int> temp2;
+        set<unsigned int> temp3;
         outgoing_neighbors_set.push_back(temp1);
         incoming_neighbors_set.push_back(temp2);
+        all_neighbors_set.push_back(temp3);
     }
 
 
@@ -272,6 +285,9 @@ void Graph::read_graph_file(string input_file, vector<set<unsigned int>> &outgoi
 
             outgoing_neighbors_set[left].insert(right);
             incoming_neighbors_set[right].insert(left);
+
+            all_neighbors_set[left].insert(right);
+            all_neighbors_set[right].insert(left);
 
             E++;
         }

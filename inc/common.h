@@ -17,9 +17,9 @@
 #define BLK_NUMS 32
 #define BLK_DIM 64
 #define GPU_TABLE_SIZES 10000
-#define WEIGHT_MISSING_EDGE 1
-#define WEIGHT_MISSING_VERT 1
-#define WEIGHT_INTRA_VERT 1
+#define WEIGHT_MISSING_EDGE .25
+#define WEIGHT_MISSING_VERT .5
+#define WEIGHT_INTRA_VERT 1.0
 #define MIN_FIND_SIM_SCORE 0.5
 #define MAX_QUERY_NODES 12
 #define MAX_EDGES 112
@@ -39,8 +39,8 @@ typedef struct G_pointers
     unsigned int *attributes;
     unsigned int *attributes_in_order;
     unsigned int *attributes_in_order_offset;
-    unsigned int *two_hop_neighbors_offset;
-    unsigned int *two_hop_neighbors;
+    unsigned int *all_neighbors;
+    unsigned int *all_neighbors_offset;
     unsigned int V;
     unsigned int E;
     unsigned int num_attributes;

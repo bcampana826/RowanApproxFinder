@@ -48,12 +48,12 @@ void malloc_graph_to_gpu_memory(Graph &g, G_pointers &p, bool query)
     chkerr(cudaMemcpy(p.attributes_in_order_offset, g.attributes_in_order_offset, (g.num_attributes + 1) * sizeof(unsigned int), cudaMemcpyHostToDevice));
 
     std::cout << "7" << std::endl;
-    //chkerr(cudaMalloc(&(p.two_hop_neighbors), g.two_hop_neighbors_offset[g.V] * sizeof(unsigned int)));
-    //chkerr(cudaMemcpy(p.two_hop_neighbors, g.two_hop_neighbors, g.two_hop_neighbors_offset[g.V] * sizeof(unsigned int), cudaMemcpyHostToDevice));
+    chkerr(cudaMalloc(&(p.all_neighbors), g.all_neighbors_offset[g.V] * sizeof(unsigned int)));
+    chkerr(cudaMemcpy(p.all_neighbors, g.all_neighbors, g.all_neighbors_offset[g.V] * sizeof(unsigned int), cudaMemcpyHostToDevice));
 
     std::cout << "8" << std::endl;
-    //chkerr(cudaMalloc(&(p.two_hop_neighbors_offset), (g.V + 1) * sizeof(unsigned int)));
-    //chkerr(cudaMemcpy(p.two_hop_neighbors_offset, g.two_hop_neighbors_offset, (g.V + 1) * sizeof(unsigned int), cudaMemcpyHostToDevice));
+    chkerr(cudaMalloc(&(p.all_neighbors_offset), (g.V + 1) * sizeof(unsigned int)));
+    chkerr(cudaMemcpy(p.all_neighbors_offset, g.all_neighbors_offset, (g.V + 1) * sizeof(unsigned int), cudaMemcpyHostToDevice));
 
     std::cout << "9" << std::endl;
     p.V = g.V;
@@ -73,7 +73,7 @@ void malloc_extra_to_gpu_memory(E_pointers &e, unsigned int v, unsigned int *v_o
     chkerr(cudaMalloc(&(e.matching_order), (v) * sizeof(unsigned int)));
     chkerr(cudaMemcpy(e.matching_order, v_order, (v) * sizeof(unsigned int), cudaMemcpyHostToDevice));
 
-    chkerr(cudaMallocManaged(&(e.result_lengths), (v + 1) * sizeof(unsigned int)));
+    chkerr(cudaMallocManaged(&(e.result_lengths), (v + 2) * sizeof(unsigned int)));
 
     // datastructure
     // this table_size is variable based on workers, but for now im setting it constant
@@ -83,7 +83,7 @@ void malloc_extra_to_gpu_memory(E_pointers &e, unsigned int v, unsigned int *v_o
     chkerr(cudaMalloc(&(e.scores_table), table_size));
     chkerr(cudaMalloc(&(e.intra_v_table), table_size));
 
-    chkerr(cudaMalloc(&(e.write_pos), sizeof(unsigned long long int)));
+    chkerr(cudaMallocManaged(&(e.write_pos), sizeof(unsigned long long int)));
     chkerr(cudaMemset(e.write_pos, 0, sizeof(unsigned long long int)));
 
     unsigned int buffer_size = BUFFER_TABLE_SIZE * sizeof(unsigned int);

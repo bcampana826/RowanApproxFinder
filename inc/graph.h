@@ -26,10 +26,16 @@ public:
     unsigned int * two_hop_neighbors;
     unsigned int * two_hop_neighbors_offset;
 
+    unsigned int * all_neighbors;
+    unsigned int * all_neighbors_offset;
+
     unsigned int * matching_order;
     unsigned int * signatures;
     
-    void read_graph_file(string input_file, vector<set<unsigned int>> &outgoing_neighbors_set,vector<set<unsigned int>> &incoming_neighbors_set, vector<set<unsigned int>> &attribute_set);
+    void read_graph_file(string input_file, vector<set<unsigned int>> &outgoing_neighbors_set,
+                        vector<set<unsigned int>> &incoming_neighbors_set, 
+                        vector<set<unsigned int>> &attribute_set,
+                        vector<set<unsigned int>> &all_neighbors_set);
     void gen_root_node_and_matching_order();
     void printGraph();
     void create_matching_order(Graph data);

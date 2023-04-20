@@ -100,6 +100,7 @@ __global__ void initialize_searching(G_pointers query_pointers, G_pointers data_
 {
 
     extra_pointers.result_lengths[0] = 0;
+    extra_pointers.result_lengths[1] = 0;
     // Initialize the first row of the results table
     unsigned int v = extra_pointers.matching_order[0];
 
@@ -116,15 +117,13 @@ __global__ void initialize_searching(G_pointers query_pointers, G_pointers data_
     // parrallel, so skip for each thread
     for (unsigned int i = globalIndex; i < candidates; i += totalThreads)
     {
+        printf("hello?");
         unsigned int data = data_pointers.attributes_in_order[i + start];
 
         unsigned int index = atomicAdd(&extra_pointers.result_lengths[1], 1);
-        // extra_pointers.indexes_table[index] = -1;
         extra_pointers.results_table[index] = data;
-        extra_pointers.intra_v_table[index] = 0;
-
         // so for others we will have a get score that takes the precopy to do this. For now, were just doing that formula here manually
-        extra_pointers.scores_table[index] = (query_pointers.V - 1) * WEIGHT_MISSING_VERT + (query_pointers.E) * WEIGHT_MISSING_EDGE;
+        extra_pointers.scores_table[index] = 100;
     }
 }
 
@@ -280,7 +279,7 @@ __device__ void find_new_good_candidates(unsigned int *partial_paths, unsigned i
         // 
         // added_id = 0 - 31, after each iteration, += 32
         for(int i = 0; i < iter; i++){
-            num_neighbors = d_p.outgoing_neighbors_offset[partial_paths[i]+1] - d_p.outgoing_neighbors_offset[partial_paths[i]];
+            num_neighbors = d_p.all_neighbors_offset[partial_paths[i]+1] - d_p.all_neighbors_offset[partial_paths[i]];
 
             //printf("\nnum_neighbors: %d, added_id:%d\n",num_neighbors,added_id);
             if(added_id < sum+num_neighbors){
@@ -299,7 +298,7 @@ __device__ void find_new_good_candidates(unsigned int *partial_paths, unsigned i
             break;
         }
 
-        unsigned int data_node_checking = d_p.outgoing_neighbors[d_p.outgoing_neighbors_offset[node]+neighbor];
+        unsigned int data_node_checking = d_p.all_neighbors[d_p.all_neighbors_offset[node]+neighbor];
 
         //DEBUG
 
@@ -323,7 +322,6 @@ __device__ void find_new_good_candidates(unsigned int *partial_paths, unsigned i
                 else
                 {
                     // add to helper buffer instead
-                    printf("TIME TO PUT IN THE BUFFER \n");
                     buffer[idx - MAX_EDGES] =data_node_checking;
                 }
             }    
@@ -347,7 +345,7 @@ __device__ unsigned int get_graph_score(unsigned int *partial_paths, unsigned in
     // score is saved as the following !!!@@##, where !!! are the edges in the graph, @@ are the nodes in the graph, and ## are the extra nodes in the graph
 
     // first, make sure this isn't a missing node
-    if(check_if_found(partial_paths,0,iter,data_node)){
+    if(check_if_found(partial_paths,0,iter,data_node)!=-1){
         // already added, missing node, return prev score
         return prev_score;
     }
@@ -411,17 +409,38 @@ __device__ unsigned int get_graph_score(unsigned int *partial_paths, unsigned in
             
         }
     }
-
     unsigned int score = prev_score + 10000*mapped_edges + 100*1;
 
 
     return score;
 }
 
-__device__ void print_precopy_plus_node(unsigned int* partial_path, unsigned int iter, unsigned int node){
+__device__ void print_precopy_plus_node(unsigned int* partial_path, unsigned int iter, unsigned int node, unsigned int score){
 
-    printf("\n[%d,%d,%d,%d,%d,%d,%d]\n",partial_path[0],partial_path[1],partial_path[2],partial_path[3],partial_path[4],partial_path[5],node);
+    printf("\n[%d,%d,%d,%d,%d,%d,%d,%d]\n",partial_path[0],partial_path[1],partial_path[2],partial_path[3],partial_path[4],partial_path[5],node,score);
 
+}
+
+__device__ unsigned int get_score_specific(unsigned int mode, unsigned int score){
+    if(mode == 0){
+        // return number of edges
+        return score/10000;
+    } else if (mode == 1){
+        // return number of nodes
+        return ((score/100)%100);
+    } else {
+        // return intra nodes
+        return (score % 100);
+    }
+    return 0;
+}
+
+__device__ bool is_core_node(unsigned int node, G_pointers q_p){
+    if (q_p.signatures[node*Signature_Properties+0] >= 2 || q_p.signatures[node*Signature_Properties+1] >= 2 ){
+        return true;
+    } else {
+        return false;
+    }
 }
 
 __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers data_pointers, E_pointers extra_pointers,
@@ -495,47 +514,45 @@ __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers 
             printf("\njobs: %d, pre idx: %d, global count: %d ---- CANDS AFTER SORT: %d\n",jobs,pre_idx,global_count[0],cand_counter[warp_id]);
         }
 
-        if(cand_counter[warp_id] <= 0){
-            continue;
+
+        // save this for knowing where we're writing too
+        unsigned int write_offset;
+        if(lane_id==0){
+            printf("\nFOUND CAND - %d",candidates[0]);
         }
-        // now, we can write out the values
-        if(iter == query_pointers.V -1){
-            unsigned int write_offset;
+        
 
-            if(lane_id==0){
-                for(int i = 0; i<cand_counter[warp_id]; i++){
-                    print_precopy_plus_node(&partial_paths[warp_id * MAX_QUERY_NODES],iter,candidates[warp_id * MAX_EDGES+i]);
-                }
-            }
+        // for each found candidate
+        for (unsigned int i = lane_id; i < cand_counter[warp_id]; i += 32)
+        {
+            unsigned int val = get_val_from_array_and_buf(&candidates[warp_id * MAX_EDGES], &extra_pointers.helper_buffer[global_idx * BUFFER_PER_WARP], MAX_EDGES, i);
+                // increase the offset and save them in the results and index table
+            write_offset = atomicAdd(&extra_pointers.result_lengths[iter+1], 1);
+            //printf("%d\n",write_offset);
+            //printf("\nwrite offset: %d",write_offset);
+            extra_pointers.results_table[write_offset] = val;
+            extra_pointers.indexes_table[write_offset] = pre_idx + extra_pointers.result_lengths[iter - 1];
+            // unused atm
+            // extra_pointers.intra_v_table
+            unsigned int prev_score = extra_pointers.scores_table[pre_idx+extra_pointers.result_lengths[iter - 1]];
+            extra_pointers.scores_table[write_offset] = get_graph_score(&partial_paths[warp_id * MAX_QUERY_NODES], iter, val, prev_score,
+                                                                        query_pointers,data_pointers,extra_pointers);
+        }
 
+        // if there isn't already a missing node in this graph, and if this iter is not a core node
+        unsigned int prev_score = extra_pointers.scores_table[pre_idx+extra_pointers.result_lengths[iter - 1]];
+        if(get_score_specific(1,prev_score) >= iter && !is_core_node(v,query_pointers)){
 
-        } else {
+            //make it a missing node
+            write_offset = atomicAdd(&extra_pointers.result_lengths[iter+1], 1);
+            // write an empty node
+            unsigned int val = extra_pointers.results_table[pre_idx+extra_pointers.result_lengths[iter - 1]];
 
-            // save this for knowing where we're writing too
-            unsigned int write_offset;
-            if(lane_id==0){
-                printf("\nFOUND CAND - %d",candidates[0]);
-            }
-            
+            extra_pointers.results_table[write_offset] = val;
+            extra_pointers.indexes_table[write_offset] = pre_idx + extra_pointers.result_lengths[iter - 1];
+            extra_pointers.scores_table[write_offset] = get_graph_score(&partial_paths[warp_id * MAX_QUERY_NODES], iter, val, prev_score,
+                                                                        query_pointers,data_pointers,extra_pointers);
 
-            // for each found candidate
-            for (unsigned int i = lane_id; i < cand_counter[warp_id]; i += 32)
-            {
-                unsigned int val = get_val_from_array_and_buf(&candidates[warp_id * MAX_EDGES], &extra_pointers.helper_buffer[global_idx * BUFFER_PER_WARP], MAX_EDGES, i);
-                 // increase the offset and save them in the results and index table
-                write_offset = atomicAdd(&extra_pointers.result_lengths[iter+1], 1);
-                //printf("%d\n",write_offset);
-                //printf("\nwrite offset: %d",write_offset);
-                extra_pointers.results_table[write_offset] = val;
-                extra_pointers.indexes_table[write_offset] = pre_idx + extra_pointers.result_lengths[iter - 1];
-                // unused atm
-                // extra_pointers.intra_v_table
-                unsigned int prev_score =extra_pointers.scores_table[pre_idx+extra_pointers.result_lengths[iter - 1]];
-
-                extra_pointers.scores_table[write_offset] = get_graph_score(&partial_paths[warp_id * MAX_QUERY_NODES], iter, val, prev_score,
-                                                                            query_pointers,data_pointers,extra_pointers);
-
-            }
         }
     }
 }

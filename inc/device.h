@@ -17,6 +17,8 @@ __device__ void construct_partial_path(unsigned int *partial_paths, unsigned int
                                        unsigned int *results_table, unsigned int lane_id, unsigned int warp_id, unsigned int iter,
                                        unsigned int pre_idx);
 
+__device__ unsigned int get_score_specific(unsigned int mode, unsigned int score);
+
 __device__ bool check_data_node_query_node_map_score(unsigned int *partial_paths, unsigned int iter, unsigned int data_node,
                                                      G_pointers query_pointers, G_pointers data_pointers, E_pointers extra_pointers);
 
