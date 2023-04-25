@@ -11,7 +11,7 @@ __device__ unsigned int get_val_from_array_and_buf(unsigned int *array, unsigned
 __global__ void initialize_searching(G_pointers query_pointers,G_pointers data_pointers, E_pointers extra_pointers);
 
 __global__ void approximate_search_kernel(G_pointers query_pointers,G_pointers data_pointers, E_pointers extra_pointers, unsigned int iter,
-                                          unsigned int jobs, unsigned int * global_count);
+                                          unsigned int jobs);
 
 __device__ void construct_partial_path(unsigned int *partial_paths, unsigned int *counter, unsigned int *result_lengths, unsigned int *index_table,
                                        unsigned int *results_table, unsigned int lane_id, unsigned int warp_id, unsigned int iter,
