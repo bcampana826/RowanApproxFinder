@@ -60,6 +60,7 @@ __device__ void sort_out_dupes(unsigned int *candidates, unsigned int *buffer, u
                 }
                 else
                 {
+                    printf("Buffer\n");
                     buffer[new_count - MAX_EDGES] = checking;
                 }
                 new_count++;
@@ -87,7 +88,8 @@ __device__ unsigned int get_val_from_array_and_buf(unsigned int *array, unsigned
 {
     if (index >= max)
     {
-        printf("TIME TO PUT IN THE BUFFER \n");
+        //printf("TIME TO PUT IN THE BUFFER \n");
+        printf("Buffer\n");
         return buffer[index - max];
     }
     else
@@ -100,7 +102,6 @@ __global__ void initialize_searching(G_pointers query_pointers, G_pointers data_
 {
 
     extra_pointers.result_lengths[0] = 0;
-    extra_pointers.result_lengths[1] = 0;
     // Initialize the first row of the results table
     unsigned int v = extra_pointers.matching_order[0];
 
@@ -117,13 +118,15 @@ __global__ void initialize_searching(G_pointers query_pointers, G_pointers data_
     // parrallel, so skip for each thread
     for (unsigned int i = globalIndex; i < candidates; i += totalThreads)
     {
-        printf("hello?");
         unsigned int data = data_pointers.attributes_in_order[i + start];
 
         unsigned int index = atomicAdd(&extra_pointers.result_lengths[1], 1);
+        // extra_pointers.indexes_table[index] = -1;
         extra_pointers.results_table[index] = data;
+        extra_pointers.intra_v_table[index] = 0;
+
         // so for others we will have a get score that takes the precopy to do this. For now, were just doing that formula here manually
-        extra_pointers.scores_table[index] = 100;
+        extra_pointers.scores_table[index] = (query_pointers.V - 1) * WEIGHT_MISSING_VERT + (query_pointers.E) * WEIGHT_MISSING_EDGE;
     }
 }
 
@@ -145,7 +148,7 @@ __device__ void construct_partial_path(unsigned int *partial_paths, unsigned int
             {
                 
                 vertexLocation = result_lengths[i] + pre_idx;
-                printf("%d,",results_table[vertexLocation]);
+                //printf("%d,",results_table[vertexLocation]);
             }
             else
             {
@@ -279,7 +282,7 @@ __device__ void find_new_good_candidates(unsigned int *partial_paths, unsigned i
         // 
         // added_id = 0 - 31, after each iteration, += 32
         for(int i = 0; i < iter; i++){
-            num_neighbors = d_p.all_neighbors_offset[partial_paths[i]+1] - d_p.all_neighbors_offset[partial_paths[i]];
+            num_neighbors = d_p.outgoing_neighbors_offset[partial_paths[i]+1] - d_p.outgoing_neighbors_offset[partial_paths[i]];
 
             //printf("\nnum_neighbors: %d, added_id:%d\n",num_neighbors,added_id);
             if(added_id < sum+num_neighbors){
@@ -298,7 +301,7 @@ __device__ void find_new_good_candidates(unsigned int *partial_paths, unsigned i
             break;
         }
 
-        unsigned int data_node_checking = d_p.all_neighbors[d_p.all_neighbors_offset[node]+neighbor];
+        unsigned int data_node_checking = d_p.outgoing_neighbors[d_p.outgoing_neighbors_offset[node]+neighbor];
 
         //DEBUG
 
@@ -322,6 +325,7 @@ __device__ void find_new_good_candidates(unsigned int *partial_paths, unsigned i
                 else
                 {
                     // add to helper buffer instead
+                    //printf("TIME TO PUT IN THE BUFFER \n");
                     buffer[idx - MAX_EDGES] =data_node_checking;
                 }
             }    
@@ -444,10 +448,9 @@ __device__ bool is_core_node(unsigned int node, G_pointers q_p){
 }
 
 __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers data_pointers, E_pointers extra_pointers,
-                                          unsigned int iter, unsigned int jobs, unsigned int *global_count)
+                                          unsigned int iter, unsigned int jobs)
 {
 
-    
     // this is one of the lists used in the cuTS implementation.
     __shared__ unsigned int partial_paths[WARPS_EACH_BLK * MAX_QUERY_NODES]; // 24,576 ( 3.072 kb )
 
@@ -464,28 +467,39 @@ __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers 
     unsigned int lane_id = threadIdx.x % 32;
     unsigned int global_idx = (blockIdx.x) * WARPS_EACH_BLK + warp_id;
 
+    extra_pointers.global_count[0] = 0;
+    printf("T: %d,W: %d,L: %d,G: %d\n",threadIdx.x,warp_id,lane_id,global_idx);
 
+    
+    __syncthreads();
 
     while (true)
     {
+        __syncwarp();
 
         unsigned int pre_idx;
 
         // first thread in each warp (  threadIdx.x%32; )
         if (lane_id == 0)
         {
-            pre_idx = atomicAdd(&global_count[0], 1);
+            pre_idx = atomicAdd(&extra_pointers.global_count[0], 1);
         }
+        __syncthreads();
+        if(lane_id == 0 && iter == 3){
+            //printf("%d,",pre_idx);
+        }
+
+            
 
         pre_idx = __shfl_sync(mask, pre_idx, 0);
 
         if (pre_idx >= jobs)
         {
+            if(iter == 1 && lane_id == 0){
+                //printf("%d warp is out\n",global_idx);
+            }
+            
             break;
-        }
-
-        if(lane_id==0){
-            //printf("\nPARTIAL PATH --- pre idx: %d \n",pre_idx);
         }
 
         
@@ -493,7 +507,8 @@ __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers 
         construct_partial_path(partial_paths, cand_counter, extra_pointers.result_lengths, extra_pointers.indexes_table, extra_pointers.results_table,
                                lane_id, warp_id, iter, pre_idx);
 
-        if(lane_id==0){
+        if(lane_id==0 && iter == 1){
+            //printf("%d\n",pre_idx);
             //printf("\nPARTIAL PATH: %d \n",partial_paths[warp_id*MAX_QUERY_NODES+iter-1]);
         }
  
@@ -510,19 +525,36 @@ __global__ void approximate_search_kernel(G_pointers query_pointers, G_pointers 
         // we need to sort out duplicate candidates
         sort_out_dupes(&candidates[warp_id * MAX_EDGES], &extra_pointers.helper_buffer[global_idx * BUFFER_PER_WARP], &cand_counter[warp_id], lane_id);
 
-        if(lane_id==0){
-            printf("\njobs: %d, pre idx: %d, global count: %d ---- CANDS AFTER SORT: %d\n",jobs,pre_idx,global_count[0],cand_counter[warp_id]);
+        if(lane_id==0 && cand_counter[warp_id] > 0 && iter==2){
+            //printf("jobs: %d, pre idx: %d, global count: %d WLG:%d,%d,%d---- CANDS AFTER SORT: %d\n",jobs,pre_idx,extra_pointers.global_count[0],warp_id,lane_id,global_idx,cand_counter[warp_id]);
+            //printf("%d,",cand_counter[warp_id]);
         }
 
+        if(cand_counter[warp_id] <= 0){
+            continue;
+        }
+        // now, we can write out the values
+        if(iter == query_pointers.V -1){
+            unsigned int write_offset;
+
+            if(lane_id==0){
+                //for(int i = 0; i<cand_counter[warp_id]; i++){
+                    //print_precopy_plus_node(&partial_paths[warp_id * MAX_QUERY_NODES],iter,candidates[warp_id * MAX_EDGES+i]);
+                //}
+                atomicAdd(&extra_pointers.write_pos[0], cand_counter[warp_id]);
+            }
+
+
+        } else {
 
         // save this for knowing where we're writing too
         unsigned int write_offset;
         if(lane_id==0){
-            printf("\nFOUND CAND - %d",candidates[0]);
+            //printf("\nFOUND CAND - %d",candidates[0]);
         }
         
 
-        // for each found candidate
+            // for each found candidate
         for (unsigned int i = lane_id; i < cand_counter[warp_id]; i += 32)
         {
             unsigned int val = get_val_from_array_and_buf(&candidates[warp_id * MAX_EDGES], &extra_pointers.helper_buffer[global_idx * BUFFER_PER_WARP], MAX_EDGES, i);

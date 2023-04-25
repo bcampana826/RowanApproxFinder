@@ -55,33 +55,33 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
     initialize_searching<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers);
     cudaDeviceSynchronize();
 
+    cout<<"Query Nodes: "<<query_graph.V<<endl;
+
     cout<<"Initial Canidates: "<<extra_pointers.result_lengths[1]<<endl;
 
-
-    unsigned int *global_count;
-    cudaMalloc(&global_count,sizeof(unsigned int));
 
     // if we have at least one match
     if(extra_pointers.result_lengths[1] > 0){
         
         for(unsigned int iter = 1; iter < query_graph.V; iter++){
 
-
-
             extra_pointers.result_lengths[iter+1] = extra_pointers.result_lengths[iter];
-
-            cudaMemset(global_count,0,sizeof(unsigned int));
 
             unsigned int jobs_count = extra_pointers.result_lengths[iter] - extra_pointers.result_lengths[iter-1];
 
+            
             cout<<"\niter: "<<iter<<" Jobs: "<<jobs_count<<endl;
             cout<<"Finding "<<query_graph.matching_order[iter]<<endl;
     
 
-            approximate_search_kernel<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers,iter,jobs_count,global_count);
+            approximate_search_kernel<<<BLK_NUMS,BLK_DIM>>>(query_pointers,data_pointers,extra_pointers,iter,jobs_count);
             cudaDeviceSynchronize();
 
-        }
+            cout<<"Results: "<<extra_pointers.result_lengths[iter+1]<<endl;
+
+
+
+            cout<<"Results: "<<extra_pointers.result_lengths[iter+1]<<endl;
 
           // Allocate CPU memory
         unsigned int* results = (unsigned int*)malloc(extra_pointers.result_lengths[query_graph.V]);  // Allocate memory on the CPU for results_table
@@ -91,6 +91,10 @@ unsigned long long int approx_searching(string query_file,string data_file,unsig
         cudaMemcpy(results, extra_pointers.results_table, sizeof(unsigned int) * extra_pointers.result_lengths[query_graph.V], cudaMemcpyDeviceToHost);
         cudaMemcpy(indexes, extra_pointers.indexes_table, sizeof(unsigned int) * extra_pointers.result_lengths[query_graph.V], cudaMemcpyDeviceToHost);
         cudaMemcpy(scores, extra_pointers.results_table, sizeof(unsigned int) * extra_pointers.result_lengths[query_graph.V], cudaMemcpyDeviceToHost);
+
+
+        }
+
 
         
         printf("\n\n\n%d",extra_pointers.result_lengths[query_graph.V]);

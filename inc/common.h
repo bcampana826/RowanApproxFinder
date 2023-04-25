@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
+#include <chrono>
 #include "omp.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
@@ -14,8 +15,8 @@
 #define Signature_Properties 2
 #define In_degree_offset 0
 #define Out_degree_offset 1
-#define BLK_NUMS 32
-#define BLK_DIM 64
+#define BLK_NUMS 1
+#define BLK_DIM 128
 #define GPU_TABLE_SIZES 10000
 #define WEIGHT_MISSING_EDGE .25
 #define WEIGHT_MISSING_VERT .5
@@ -24,7 +25,7 @@
 #define MAX_QUERY_NODES 12
 #define MAX_EDGES 112
 #define WARPS_EACH_BLK (BLK_DIM / 32)
-#define BUFFER_PER_WARP 100000
+#define BUFFER_PER_WARP 100000000
 #define BUFFER_TABLE_SIZE (BUFFER_PER_WARP * WARPS_EACH_BLK * BLK_NUMS)
 
 using namespace std;
@@ -49,6 +50,7 @@ typedef struct G_pointers
 typedef struct E_pointers
 {
     unsigned int *matching_order;
+    unsigned int *global_count;
     unsigned int *result_lengths;
     unsigned int *results_table;
     unsigned int *indexes_table;
